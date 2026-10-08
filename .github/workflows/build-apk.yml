@@ -1,11 +1,11 @@
-name: Build MousePointerSettings v0.6
+name: Build MousePointerSettings v0.7
 
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
     paths:
-      - 'v06src/**'
+      - 'v07src/**'
       - '.github/workflows/build-apk.yml'
 
 jobs:
@@ -19,17 +19,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Reconstruct and verify full source package
+      - name: Reconstruct and verify v0.7 source package
         shell: bash
         run: |
           set -euo pipefail
-          cat v06src/part00a.txt v06src/part00b.txt v06src/part01.txt v06src/part02.txt v06src/part03.txt v06src/part04.txt v06src/part05.txt v06src/part06.txt > v06.b64
-          base64 --decode v06.b64 > MousePointerSettings-v0.6-system-package.zip
-          echo "bfb3021e36aa4d342ea448705ae6849fadb72edefee13310ed433e8604799b5c  MousePointerSettings-v0.6-system-package.zip" | sha256sum -c -
-          unzip -t MousePointerSettings-v0.6-system-package.zip
-          unzip -q MousePointerSettings-v0.6-system-package.zip
-          test -f MousePointerSettings-v0.6-system-package/app/build.gradle
-          ! grep -R "setCustomPointerIcon\|android.os.ServiceManager\|IInputManager" MousePointerSettings-v0.6-system-package/app/src/main/java
+          cat v07src/part00.txt v07src/part01.txt v07src/part02.txt v07src/part03.txt v07src/part04.txt v07src/part05.txt > v07.b64
+          base64 --decode v07.b64 > MousePointerSettings-v0.7-system-package.zip
+          echo "3662509b961ee987c772ed6222b7a09bc1adbb9b49686bcdba76268d4e834a9f  MousePointerSettings-v0.7-system-package.zip" | sha256sum -c -
+          unzip -t MousePointerSettings-v0.7-system-package.zip
+          unzip -q MousePointerSettings-v0.7-system-package.zip
+          test -f MousePointerSettings-v0.7-system-package/app/build.gradle
+          ! grep -R -E 'BIND_ACCESSIBILITY_SERVICE|android\.accessibilityservice|ACTION_ACCESSIBILITY_SETTINGS|AccessibilityManager|PointerAccessibilityService|SafeSessionController|SYSTEM_ALERT_WINDOW|ServiceManager|IInputManager|setCustomPointerIcon' MousePointerSettings-v0.7-system-package/app/src/main MousePointerSettings-v0.7-system-package/app/build.gradle
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -55,26 +55,29 @@ jobs:
 
       - name: Build debug APK
         shell: bash
-        working-directory: MousePointerSettings-v0.6-system-package
+        working-directory: MousePointerSettings-v0.7-system-package
         run: gradle :app:assembleDebug --stacktrace
 
-      - name: Verify APK
+      - name: Verify APK and sensitive-permission removal
         shell: bash
         run: |
           set -euo pipefail
-          APK='MousePointerSettings-v0.6-system-package/app/build/outputs/apk/debug/app-debug.apk'
+          APK='MousePointerSettings-v0.7-system-package/app/build/outputs/apk/debug/app-debug.apk'
           test -s "$APK"
           mkdir -p dist
-          cp "$APK" dist/MousePointerSettings-v0.6.apk
-          sha256sum dist/MousePointerSettings-v0.6.apk | tee dist/SHA256.txt
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging dist/MousePointerSettings-v0.6.apk | head -20
+          cp "$APK" dist/MousePointerSettings-v0.7.apk
+          sha256sum dist/MousePointerSettings-v0.7.apk | tee dist/SHA256.txt
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging dist/MousePointerSettings-v0.7.apk | head -20
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump xmltree dist/MousePointerSettings-v0.7.apk AndroidManifest.xml > dist/manifest-tree.txt
+          ! grep -E 'BIND_ACCESSIBILITY_SERVICE|android\.accessibilityservice|SYSTEM_ALERT_WINDOW' dist/manifest-tree.txt
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MousePointerSettings-v0.6
+          name: MousePointerSettings-v0.7
           path: |
-            dist/MousePointerSettings-v0.6.apk
+            dist/MousePointerSettings-v0.7.apk
             dist/SHA256.txt
+            dist/manifest-tree.txt
           if-no-files-found: error
           retention-days: 7
