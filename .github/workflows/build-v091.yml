@@ -40,37 +40,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          root = Path('MousePointerSettings-v0.9-system-package')
-          manifest = root/'app/src/main/AndroidManifest.xml'
-          s = manifest.read_text()
-          provider = '''
-        <provider
-            android:name="rikka.shizuku.ShizukuProvider"
-            android:authorities="${applicationId}.shizuku"
-            android:multiprocess="false"
-            android:enabled="true"
-            android:exported="true"
-            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
-'''
-          if 'rikka.shizuku.ShizukuProvider' not in s:
-              s = s.replace('    </application>', provider + '    </application>')
-          manifest.write_text(s)
-
-          gradle = root/'app/build.gradle'
-          s = gradle.read_text().replace('versionCode 9', 'versionCode 10').replace("versionName '0.9.0'", "versionName '0.9.1'")
-          gradle.write_text(s)
-
-          html = root/'app/src/main/assets/index.html'
-          s = html.read_text().replace('v0.9 · Android 기본 포인터 우선 적용', 'v0.9.1 · Android 기본 포인터 우선 적용')
-          html.write_text(s)
-
-          readme = root/'README.md'
-          s = readme.read_text()
-          s = '# v0.9.1 Shizuku Binder 수신 수정\n\n- ShizukuProvider를 Manifest에 명시하여 실행 중인 Shizuku Binder를 정상 수신하도록 수정했습니다.\n- versionCode 10 / versionName 0.9.1\n\n' + s
-          readme.write_text(s)
-          PY
+          python3 -c 'from pathlib import Path; root=Path("MousePointerSettings-v0.9-system-package"); m=root/"app/src/main/AndroidManifest.xml"; s=m.read_text(); p="\\n        <provider\\n            android:name=\\\"rikka.shizuku.ShizukuProvider\\\"\\n            android:authorities=\\\"${applicationId}.shizuku\\\"\\n            android:multiprocess=\\\"false\\\"\\n            android:enabled=\\\"true\\\"\\n            android:exported=\\\"true\\\"\\n            android:permission=\\\"android.permission.INTERACT_ACROSS_USERS_FULL\\\" />\\n"; m.write_text(s if "rikka.shizuku.ShizukuProvider" in s else s.replace("    </application>",p+"    </application>")); g=root/"app/build.gradle"; s=g.read_text().replace("versionCode 9","versionCode 10").replace("versionName \\'0.9.0\\'","versionName \\'0.9.1\\'"); g.write_text(s); h=root/"app/src/main/assets/index.html"; h.write_text(h.read_text().replace("v0.9 · Android 기본 포인터 우선 적용","v0.9.1 · Android 기본 포인터 우선 적용")); r=root/"README.md"; r.write_text("# v0.9.1 Shizuku Binder 수신 수정\\n\\n- ShizukuProvider를 Manifest에 명시하여 실행 중인 Shizuku Binder를 정상 수신하도록 수정했습니다.\\n- versionCode 10 / versionName 0.9.1\\n\\n"+r.read_text())'
           grep -q 'rikka.shizuku.ShizukuProvider' MousePointerSettings-v0.9-system-package/app/src/main/AndroidManifest.xml
           grep -q 'versionCode 10' MousePointerSettings-v0.9-system-package/app/build.gradle
 
