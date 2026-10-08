@@ -1,0 +1,30 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.pointer.settings.actual'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.pointer.settings.actual'
+        minSdk 26
+        targetSdk 35
+        versionCode 6
+        versionName '0.6.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+}
+
+dependencies {
+    // v0.6 safe-session mode intentionally has no Shizuku/root/hidden-API dependency.
+}
