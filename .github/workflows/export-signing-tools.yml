@@ -35,8 +35,13 @@ jobs:
           cp "$BT/apksigner" signing-tools/
           cp "$BT/zipalign" signing-tools/
           cp "$BT/lib/apksigner.jar" signing-tools/lib/
+          if [ -f "$BT/lib64/libc++.so" ]; then
+            mkdir -p signing-tools/lib64
+            cp "$BT/lib64/libc++.so" signing-tools/lib64/
+          fi
           chmod +x signing-tools/apksigner signing-tools/zipalign
           sha256sum signing-tools/apksigner signing-tools/zipalign signing-tools/lib/apksigner.jar > signing-tools/SHA256.txt
+          if [ -f signing-tools/lib64/libc++.so ]; then sha256sum signing-tools/lib64/libc++.so >> signing-tools/SHA256.txt; fi
       - uses: actions/upload-artifact@v4
         with:
           name: android-signing-tools-35.0.0
