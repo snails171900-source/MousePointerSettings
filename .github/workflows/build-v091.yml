@@ -1,0 +1,125 @@
+name: Build MousePointerSettings v0.9.1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'v09src/**'
+      - '.github/workflows/build-v091.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reconstruct v0.9 base source
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "6a3e451ce9faa2a1edf87c88046f203b8224ffcf912ae1b47be8647b8133bba4  v09src/part00.txt" | sha256sum -c -
+          echo "2801bfe5493bbe970bb73708d34f3e587b9ec5d78258717c0532911b1f50cfa7  v09src/part01.txt" | sha256sum -c -
+          echo "28f598713f5746259e6f189ccf52b704468e63d57cb3e640e12cdd237aaffef7  v09src/part02.txt" | sha256sum -c -
+          echo "64d8a42a1827e507e2b65c51a32b3986052dc0e5441776d996a0e352684d14bf  v09src/part03.txt" | sha256sum -c -
+          echo "48f9d7ab06ac0a916bc62e2b9f2ae02a3d354977e351f7db37e90494dd7ab03e  v09src/part04.txt" | sha256sum -c -
+          echo "4613acf8e9d95c4ff11bf3cf46d25ad803947151301bd428993947be569e96bf  v09src/part05.txt" | sha256sum -c -
+          echo "75548200331e4f9b65e47eb874c2be77c8da54754155ab40b48fa8c0d3a9e486  v09src/part06.txt" | sha256sum -c -
+          echo "0943d54b1c885da28abdba26f806e599df593733a37a3abbbd5c836a91cd5092  v09src/part07.txt" | sha256sum -c -
+          cat v09src/part*.txt > v09.b64
+          base64 --decode v09.b64 > base-v09.zip
+          echo "ba534401b6446921a038424b884b7a35481ecddab6acf6388e597958677a0936  base-v09.zip" | sha256sum -c -
+          unzip -q base-v09.zip
+
+      - name: Apply v0.9.1 Shizuku provider fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path('MousePointerSettings-v0.9-system-package')
+          manifest = root/'app/src/main/AndroidManifest.xml'
+          s = manifest.read_text()
+          provider = '''
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:multiprocess="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+'''
+          if 'rikka.shizuku.ShizukuProvider' not in s:
+              s = s.replace('    </application>', provider + '    </application>')
+          manifest.write_text(s)
+
+          gradle = root/'app/build.gradle'
+          s = gradle.read_text().replace('versionCode 9', 'versionCode 10').replace("versionName '0.9.0'", "versionName '0.9.1'")
+          gradle.write_text(s)
+
+          html = root/'app/src/main/assets/index.html'
+          s = html.read_text().replace('v0.9 · Android 기본 포인터 우선 적용', 'v0.9.1 · Android 기본 포인터 우선 적용')
+          html.write_text(s)
+
+          readme = root/'README.md'
+          s = readme.read_text()
+          s = '# v0.9.1 Shizuku Binder 수신 수정\n\n- ShizukuProvider를 Manifest에 명시하여 실행 중인 Shizuku Binder를 정상 수신하도록 수정했습니다.\n- versionCode 10 / versionName 0.9.1\n\n' + s
+          readme.write_text(s)
+          PY
+          grep -q 'rikka.shizuku.ShizukuProvider' MousePointerSettings-v0.9-system-package/app/src/main/AndroidManifest.xml
+          grep -q 'versionCode 10' MousePointerSettings-v0.9-system-package/app/build.gradle
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK 35
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"; fi
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platforms;android-35' 'build-tools;35.0.0'
+
+      - name: Setup Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build unsigned release APK
+        shell: bash
+        working-directory: MousePointerSettings-v0.9-system-package
+        run: gradle :app:assembleRelease --stacktrace
+
+      - name: Verify and package
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT='MousePointerSettings-v0.9-system-package'
+          APK="$ROOT/app/build/outputs/apk/release/app-release-unsigned.apk"
+          test -s "$APK"
+          mkdir -p dist
+          cp "$APK" dist/MousePointerSettings-v0.9.1-unsigned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump xmltree "$APK" AndroidManifest.xml > dist/manifest-tree.txt
+          grep -q 'rikka.shizuku.ShizukuProvider' dist/manifest-tree.txt
+          grep -q 'android.permission.INTERACT_ACROSS_USERS_FULL' dist/manifest-tree.txt
+          rm -rf "$ROOT/app/build"
+          mv "$ROOT" MousePointerSettings-v0.9.1-system-package
+          zip -qr dist/MousePointerSettings-v0.9.1-system-package.zip MousePointerSettings-v0.9.1-system-package
+          sha256sum dist/MousePointerSettings-v0.9.1-unsigned.apk dist/MousePointerSettings-v0.9.1-system-package.zip > dist/SHA256.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MousePointerSettings-v0.9.1-unsigned
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
