@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">마우스 포인터</string>
+    <string name="accessibility_service_name">마우스 포인터 안전 세션</string>
+    <string name="accessibility_service_desc">선택한 포인터 디자인을 앱이 살아 있는 접근성 세션 오버레이에서만 적용합니다. 서비스를 끄거나 앱을 삭제하면 오버레이도 함께 제거됩니다.</string>
+</resources>
