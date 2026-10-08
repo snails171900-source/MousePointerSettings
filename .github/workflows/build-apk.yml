@@ -23,7 +23,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat v06src/part00.txt v06src/part01.txt v06src/part02.txt v06src/part03.txt v06src/part04.txt v06src/part05.txt v06src/part06.txt > v06.b64
+          cat v06src/part00a.txt v06src/part00b.txt v06src/part01.txt v06src/part02.txt v06src/part03.txt v06src/part04.txt v06src/part05.txt v06src/part06.txt > v06.b64
           base64 --decode v06.b64 > MousePointerSettings-v0.6-system-package.zip
           echo "bfb3021e36aa4d342ea448705ae6849fadb72edefee13310ed433e8604799b5c  MousePointerSettings-v0.6-system-package.zip" | sha256sum -c -
           unzip -t MousePointerSettings-v0.6-system-package.zip
