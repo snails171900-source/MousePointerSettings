@@ -5,7 +5,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'release-input/MousePointerSettings-v0.9-system-package.zip'
+      - 'v09src/**'
       - '.github/workflows/build-apk.yml'
 
 jobs:
@@ -19,14 +19,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify and unpack v0.9 source
+      - name: Reconstruct, verify and unpack v0.9 source
         shell: bash
         run: |
           set -euo pipefail
-          SRC='release-input/MousePointerSettings-v0.9-system-package.zip'
-          echo "ba534401b6446921a038424b884b7a35481ecddab6acf6388e597958677a0936  $SRC" | sha256sum -c -
-          unzip -t "$SRC"
-          unzip -q "$SRC"
+          cat v09src/part00.txt v09src/part01.txt v09src/part02.txt v09src/part03.txt v09src/part04.txt v09src/part05.txt v09src/part06.txt v09src/part07.txt > v09.b64
+          base64 --decode v09.b64 > MousePointerSettings-v0.9-system-package.zip
+          echo "ba534401b6446921a038424b884b7a35481ecddab6acf6388e597958677a0936  MousePointerSettings-v0.9-system-package.zip" | sha256sum -c -
+          unzip -t MousePointerSettings-v0.9-system-package.zip
+          unzip -q MousePointerSettings-v0.9-system-package.zip
           test -f MousePointerSettings-v0.9-system-package/app/build.gradle
           grep -q "versionCode 9" MousePointerSettings-v0.9-system-package/app/build.gradle
           grep -q 'dev.rikka.shizuku:api' MousePointerSettings-v0.9-system-package/app/build.gradle
