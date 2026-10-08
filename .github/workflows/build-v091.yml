@@ -49,6 +49,7 @@ jobs:
           sed -i 's/v0.9 · Android 기본 포인터 우선 적용/v0.9.1 · Android 기본 포인터 우선 적용/' MousePointerSettings-v0.9-system-package/app/src/main/assets/index.html
           grep -q 'rikka.shizuku.ShizukuProvider' "$MAN"
           grep -q 'versionCode 10' MousePointerSettings-v0.9-system-package/app/build.gradle
+          sed -i '/import androidx.annotation.Keep;/d;/^[[:space:]]*@Keep[[:space:]]*$/d' MousePointerSettings-v0.9-system-package/app/src/main/java/com/pointer/settings/actual/SystemPointerUserService.java
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
