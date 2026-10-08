@@ -12,6 +12,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,12 +35,17 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install Android SDK 35
         shell: bash
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
+          fi
+          echo "sdkmanager=$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platforms;android-35' 'build-tools;35.0.0'
 
       - name: Setup Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
@@ -58,7 +66,7 @@ jobs:
           mkdir -p dist
           cp "$APK" dist/MousePointerSettings-v0.5-debug.apk
           sha256sum dist/MousePointerSettings-v0.5-debug.apk | tee dist/SHA256.txt
-          ${ANDROID_HOME}/build-tools/35.0.0/aapt dump badging dist/MousePointerSettings-v0.5-debug.apk | head -20
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging dist/MousePointerSettings-v0.5-debug.apk | head -20
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -69,5 +77,3 @@ jobs:
             dist/SHA256.txt
           if-no-files-found: error
           retention-days: 7
-
-# trigger rebuild after source upload
