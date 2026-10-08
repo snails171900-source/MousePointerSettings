@@ -1,12 +1,11 @@
-name: Build MousePointerSettings v0.8
+name: Build MousePointerSettings v0.9
 
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
     paths:
-      - 'v07src/**'
-      - 'v08patch/**'
+      - 'release-input/MousePointerSettings-v0.9-system-package.zip'
       - '.github/workflows/build-apk.yml'
 
 jobs:
@@ -20,21 +19,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Reconstruct v0.7 baseline and patch v0.8
+      - name: Verify and unpack v0.9 source
         shell: bash
         run: |
           set -euo pipefail
-          cat v07src/part00.txt v07src/part01.txt v07src/part02.txt v07src/part03.txt v07src/part04.txt v07src/part05.txt > v07.b64
-          base64 --decode v07.b64 > v07.zip
-          echo "3662509b961ee987c772ed6222b7a09bc1adbb9b49686bcdba76268d4e834a9f  v07.zip" | sha256sum -c -
-          unzip -q v07.zip
-          mv MousePointerSettings-v0.7-system-package MousePointerSettings-v0.8-system-package
-          python3 v08patch/patch_v08.py
-          test -f MousePointerSettings-v0.8-system-package/app/build.gradle
-          grep -q "versionCode 8" MousePointerSettings-v0.8-system-package/app/build.gradle
-          grep -q "PointerWebView" MousePointerSettings-v0.8-system-package/app/src/main/java/com/pointer/settings/actual/MainActivity.java
-          grep -q "v08fix" MousePointerSettings-v0.8-system-package/app/src/main/assets/index.html
-          ! grep -R -E 'BIND_ACCESSIBILITY_SERVICE|android\.accessibilityservice|SYSTEM_ALERT_WINDOW|ServiceManager|IInputManager|setCustomPointerIcon' MousePointerSettings-v0.8-system-package/app/src/main MousePointerSettings-v0.8-system-package/app/build.gradle
+          SRC='release-input/MousePointerSettings-v0.9-system-package.zip'
+          echo "ba534401b6446921a038424b884b7a35481ecddab6acf6388e597958677a0936  $SRC" | sha256sum -c -
+          unzip -t "$SRC"
+          unzip -q "$SRC"
+          test -f MousePointerSettings-v0.9-system-package/app/build.gradle
+          grep -q "versionCode 9" MousePointerSettings-v0.9-system-package/app/build.gradle
+          grep -q 'dev.rikka.shizuku:api' MousePointerSettings-v0.9-system-package/app/build.gradle
+          grep -q 'setCustomPointerIcon' MousePointerSettings-v0.9-system-package/app/src/main/java/com/pointer/settings/actual/SystemPointerUserService.java
+          grep -q 'setPointerIconType' MousePointerSettings-v0.9-system-package/app/src/main/java/com/pointer/settings/actual/SystemPointerUserService.java
+          ! grep -R -E 'BIND_ACCESSIBILITY_SERVICE|android\.accessibilityservice|SYSTEM_ALERT_WINDOW' MousePointerSettings-v0.9-system-package/app/src/main
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -60,28 +58,28 @@ jobs:
 
       - name: Build debug APK
         shell: bash
-        working-directory: MousePointerSettings-v0.8-system-package
+        working-directory: MousePointerSettings-v0.9-system-package
         run: gradle :app:assembleDebug --stacktrace
 
       - name: Verify APK
         shell: bash
         run: |
           set -euo pipefail
-          APK='MousePointerSettings-v0.8-system-package/app/build/outputs/apk/debug/app-debug.apk'
+          APK='MousePointerSettings-v0.9-system-package/app/build/outputs/apk/debug/app-debug.apk'
           test -s "$APK"
           mkdir -p dist
-          cp "$APK" dist/MousePointerSettings-v0.8.apk
-          sha256sum dist/MousePointerSettings-v0.8.apk | tee dist/SHA256.txt
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging dist/MousePointerSettings-v0.8.apk | head -20
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump xmltree dist/MousePointerSettings-v0.8.apk AndroidManifest.xml > dist/manifest-tree.txt
+          cp "$APK" dist/MousePointerSettings-v0.9.apk
+          sha256sum dist/MousePointerSettings-v0.9.apk | tee dist/SHA256.txt
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging dist/MousePointerSettings-v0.9.apk | head -20
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump xmltree dist/MousePointerSettings-v0.9.apk AndroidManifest.xml > dist/manifest-tree.txt
           ! grep -E 'BIND_ACCESSIBILITY_SERVICE|android\.accessibilityservice|SYSTEM_ALERT_WINDOW' dist/manifest-tree.txt
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MousePointerSettings-v0.8
+          name: MousePointerSettings-v0.9
           path: |
-            dist/MousePointerSettings-v0.8.apk
+            dist/MousePointerSettings-v0.9.apk
             dist/SHA256.txt
             dist/manifest-tree.txt
           if-no-files-found: error
