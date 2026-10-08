@@ -23,17 +23,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat > expected-chunks.sha256 <<'EOF'
-6a3e451ce9faa2a1edf87c88046f203b8224ffcf912ae1b47be8647b8133bba4  v09src/part00.txt
-2801bfe5493bbe970bb73708d34f3e587b9ec5d78258717c0532911b1f50cfa7  v09src/part01.txt
-28f598713f5746259e6f189ccf52b704468e63d57cb3e640e12cdd237aaffef7  v09src/part02.txt
-64d8a42a1827e507e2b65c51a32b3986052dc0e5441776d996a0e352684d14bf  v09src/part03.txt
-48f9d7ab06ac0a916bc62e2b9f2ae02a3d354977e351f7db37e90494dd7ab03e  v09src/part04.txt
-4613acf8e9d95c4ff11bf3cf46d25ad803947151301bd428993947be569e96bf  v09src/part05.txt
-75548200331e4f9b65e47eb874c2be77c8da54754155ab40b48fa8c0d3a9e486  v09src/part06.txt
-0943d54b1c885da28abdba26f806e599df593733a37a3abbbd5c836a91cd5092  v09src/part07.txt
-EOF
-          sha256sum -c expected-chunks.sha256
+          echo "6a3e451ce9faa2a1edf87c88046f203b8224ffcf912ae1b47be8647b8133bba4  v09src/part00.txt" | sha256sum -c -
+          echo "2801bfe5493bbe970bb73708d34f3e587b9ec5d78258717c0532911b1f50cfa7  v09src/part01.txt" | sha256sum -c -
+          echo "28f598713f5746259e6f189ccf52b704468e63d57cb3e640e12cdd237aaffef7  v09src/part02.txt" | sha256sum -c -
+          echo "64d8a42a1827e507e2b65c51a32b3986052dc0e5441776d996a0e352684d14bf  v09src/part03.txt" | sha256sum -c -
+          echo "48f9d7ab06ac0a916bc62e2b9f2ae02a3d354977e351f7db37e90494dd7ab03e  v09src/part04.txt" | sha256sum -c -
+          echo "4613acf8e9d95c4ff11bf3cf46d25ad803947151301bd428993947be569e96bf  v09src/part05.txt" | sha256sum -c -
+          echo "75548200331e4f9b65e47eb874c2be77c8da54754155ab40b48fa8c0d3a9e486  v09src/part06.txt" | sha256sum -c -
+          echo "0943d54b1c885da28abdba26f806e599df593733a37a3abbbd5c836a91cd5092  v09src/part07.txt" | sha256sum -c -
           cat v09src/part00.txt v09src/part01.txt v09src/part02.txt v09src/part03.txt v09src/part04.txt v09src/part05.txt v09src/part06.txt v09src/part07.txt > v09.b64
           base64 --decode v09.b64 > MousePointerSettings-v0.9-system-package.zip
           echo "ba534401b6446921a038424b884b7a35481ecddab6acf6388e597958677a0936  MousePointerSettings-v0.9-system-package.zip" | sha256sum -c -
