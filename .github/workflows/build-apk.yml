@@ -69,3 +69,5 @@ jobs:
             dist/SHA256.txt
           if-no-files-found: error
           retention-days: 7
+
+# trigger rebuild after source upload
